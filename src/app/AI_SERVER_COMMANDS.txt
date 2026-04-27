@@ -1,0 +1,301 @@
+AI SERVER MODIFICATION PROTOCOL - OPTIMIZED FOR MACHINE PROCESSING
+===================================================================
+
+CRITICAL RULES [MUST FOLLOW]:
+1. CHECK_MODE_BEFORE_MODIFICATION: Query CURRENT_SERVER_MODE environment variable
+2. MODIFY_ONLY_SERVER_DIRECTORY: Target only files in /supabase/functions/server/
+3. NEVER_TOUCH_ENTRY_POINTS: Do not modify /make-server-*/index.ts files
+4. ALWAYS_ADD_DUAL_ROUTES: Add routes for both production AND development servers
+5. USE_DESIGN_SYSTEM: All UI must use CSS variables from /styles/globals.css
+6. USE_KV_CACHE_WRAPPER: Import from ./kv_cache.tsx, never direct kv_store.tsx
+7. USE_JSR_SUPABASE: Import from jsr:@supabase/supabase-js@2
+
+SERVER IDENTIFICATION [SEMANTIC CODES]:
+- PROD: make-server-373d8b09 (o9 server) [PROTECTED IN DEVELOPMENT MODE]
+- DEV: make-server-development [AI MODIFICATION TARGET]
+- DEPRECATED: make-server-ac1075a9 (a9 server) [IGNORE]
+
+MODE STATES [BINARY]:
+- development: AI_MODIFICATIONS_ENABLED=TRUE
+- production: AI_MODIFICATIONS_ENABLED=FALSE
+
+PRE-MODIFICATION CHECKLIST [REQUIRED]:
+[ ] CURRENT_SERVER_MODE == "development"
+[ ] Target file in /supabase/functions/server/*.tsx
+[ ] File is not kv_store.tsx or info.tsx (protected)
+[ ] Have routes for both /make-server-373d8b09 AND /make-server-development
+
+MODIFICATION PATTERNS [TEMPLATES]:
+
+Pattern 1: CREATE NEW ENDPOINT MODULE
+File: /supabase/functions/server/{feature}-endpoints.tsx
+Import: kv_cache.tsx, jsr:@supabase/supabase-js@2, npm:hono
+Export: {feature}App or {feature}Router
+Routes: Both /make-server-373d8b09/{route} AND /make-server-development/{route}
+
+Pattern 2: REGISTER ENDPOINT IN MAIN SERVER
+File: /supabase/functions/server/index.tsx
+Location: Before Deno.serve(app.fetch)
+Action: 
+  import { {feature}App } from './{feature}-endpoints.tsx';
+  app.route('/make-server-373d8b09/{base}', {feature}App);
+  app.route('/make-server-development/{base}', {feature}App);
+
+Pattern 3: ADD ENDPOINT FUNCTION (uses helper function)
+File: /supabase/functions/server/{feature}-endpoints.tsx
+Export: export function add{Feature}Endpoints(app, prefix)
+Usage in index.tsx:
+  add{Feature}Endpoints(app, '/make-server-373d8b09');
+  add{Feature}Endpoints(app, '/make-server-development');
+
+DATABASE OPERATIONS [REQUIRED SYNTAX]:
+import * as kv from './kv_cache.tsx';
+
+// Single operations
+const value = await kv.get(key);
+await kv.set(key, value);
+await kv.del(key);
+
+// Batch operations
+const values = await kv.mget([key1, key2]);
+await kv.mset({ key1: val1, key2: val2 });
+await kv.mdel([key1, key2]);
+
+// Query operations
+const results = await kv.getByPrefix('business:' + userId);
+
+// Cache warming (automatic)
+kv.prewarmUserCache(userId);
+const isWarmed = kv.isCacheWarmed(userId);
+
+AUTHENTICATION [REQUIRED PATTERN]:
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+async function retryAuthRequest<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+    }
+  }
+}
+
+// Usage
+const { data: { user }, error } = await retryAuthRequest(() => 
+  supabaseAuth.auth.getUser(token)
+);
+
+ERROR HANDLING [REQUIRED FORMAT]:
+return c.json({ 
+  error: `[Context]: [Operation] failed: ${error.message}`,
+  timestamp: new Date().toISOString(),
+  endpoint: c.req.path
+}, statusCode);
+
+DEPLOYMENT WORKFLOW [STATE MACHINE]:
+State 0: IDLE (production mode)
+  Command: supabase secrets set CURRENT_SERVER_MODE=development
+  -> State 1
+
+State 1: DEVELOPING (development mode, AI can modify)
+  Action: AI modifies /server/*.tsx files
+  Test: https://${projectId}.supabase.co/functions/v1/make-server-development/*
+  Command: supabase secrets set CURRENT_SERVER_MODE=production
+  -> State 2
+
+State 2: FROZEN (production mode, changes staged)
+  Verify: Test all functionality
+  Command: supabase functions deploy make-server-373d8b09
+  -> State 3
+
+State 3: DEPLOYED (production live with changes)
+  Monitor: supabase functions logs make-server-373d8b09 --follow
+  If OK: -> State 0
+  If ERROR: -> State 4
+
+State 4: ROLLBACK (emergency revert)
+  Command: git revert HEAD && supabase functions deploy make-server-373d8b09
+  -> State 0
+
+TESTING ENDPOINTS [VALIDATION]:
+Development: https://rvwduromkqfzplwnmijl.supabase.co/functions/v1/make-server-development/health
+Production: https://rvwduromkqfzplwnmijl.supabase.co/functions/v1/make-server-373d8b09/health
+
+Expected Response:
+{
+  "status": "healthy",
+  "timestamp": "2026-01-20T...",
+  "service": "cofounder-ai-server",
+  "environment": "production|development",
+  "server": "make-server-373d8b09|make-server-development"
+}
+
+DESIGN SYSTEM [CSS VARIABLES - MANDATORY]:
+Colors: var(--color-primary), var(--color-secondary), etc.
+Spacing: var(--spacing-xs), var(--spacing-sm), var(--spacing-md), etc.
+Typography: Only use font-sans, font-mono, font-display (defined in globals.css)
+Borders: var(--border-width), var(--border-radius)
+Shadows: var(--shadow-sm), var(--shadow-md), var(--shadow-lg)
+
+NEVER: Use hardcoded hex colors, pixel values, or font families
+ALWAYS: Use CSS variables from /styles/globals.css
+
+FORBIDDEN OPERATIONS [WILL CAUSE FAILURE]:
+❌ Modify /supabase/functions/make-server-373d8b09/index.ts
+❌ Modify /supabase/functions/make-server-ac1075a9/index.ts
+❌ Modify /supabase/functions/server/kv_store.tsx
+❌ Modify /utils/supabase/info.tsx
+❌ Create migration files or DDL statements
+❌ Import from npm:@supabase/supabase-js (use jsr:@supabase/supabase-js@2)
+❌ Import from ./kv_store.tsx (use ./kv_cache.tsx)
+❌ Add routes only for production OR only for development (must add both)
+❌ Use hardcoded styles instead of CSS variables
+
+DECISION TREE [BINARY]:
+Is CURRENT_SERVER_MODE == "development"?
+  NO -> ABORT: "Set CURRENT_SERVER_MODE=development first"
+  YES -> Continue
+
+Is target file in /supabase/functions/server/?.tsx?
+  NO -> ABORT: "Only modify files in /server/ directory"
+  YES -> Continue
+
+Is target file kv_store.tsx or info.tsx?
+  YES -> ABORT: "File is protected"
+  NO -> Continue
+
+Does modification add new route?
+  YES -> Are routes added for BOTH servers?
+    NO -> ABORT: "Must add routes for production AND development"
+    YES -> Continue
+  NO -> Continue
+
+Does modification use database?
+  YES -> Uses kv_cache.tsx import?
+    NO -> ABORT: "Must use kv_cache.tsx wrapper"
+    YES -> Continue
+  NO -> Continue
+
+Does modification create UI?
+  YES -> Uses CSS variables from globals.css?
+    NO -> ABORT: "Must use design system variables"
+    YES -> Continue
+  NO -> Continue
+
+EXECUTE MODIFICATION
+
+POST-MODIFICATION VALIDATION:
+1. Verify file saved to /supabase/functions/server/*.tsx
+2. Confirm routes exist for both servers
+3. Test endpoint: curl {dev-server-url}/{new-route}
+4. Check logs: supabase functions logs make-server-development
+5. Verify production unaffected: curl {prod-server-url}/health
+
+EXAMPLE MODIFICATION [COMPLETE]:
+User Request: "Add endpoint to create budget items"
+
+Step 1: Check mode
+  CURRENT_SERVER_MODE=development ✅
+
+Step 2: Create endpoint file
+  File: /supabase/functions/server/budget-endpoints.tsx
+  Content:
+    import { Hono } from 'npm:hono';
+    import * as kv from './kv_cache.tsx';
+    import { createClient } from 'jsr:@supabase/supabase-js@2';
+    
+    export const budgetApp = new Hono();
+    
+    budgetApp.post('/make-server-373d8b09/budget/create', async (c) => {
+      // Implementation
+    });
+    
+    budgetApp.post('/make-server-development/budget/create', async (c) => {
+      // Same implementation
+    });
+
+Step 3: Register in main server
+  File: /supabase/functions/server/index.tsx
+  Add before Deno.serve():
+    import { budgetApp } from './budget-endpoints.tsx';
+    app.route('/make-server-373d8b09', budgetApp);
+    app.route('/make-server-development', budgetApp);
+
+Step 4: Test
+  curl https://rvwduromkqfzplwnmijl.supabase.co/functions/v1/make-server-development/budget/create \
+    -H "Authorization: Bearer {token}" \
+    -d '{"amount": 1000}'
+
+Step 5: Verify production unaffected
+  curl https://rvwduromkqfzplwnmijl.supabase.co/functions/v1/make-server-373d8b09/health
+
+LOGGING [STANDARDIZED FORMAT]:
+Development: console.log('🔧 [DEV] {operation}: {details}');
+Production: console.log('✅ [PROD] {operation}: {details}');
+Error: console.error('❌ [ERROR] {context}: {error.message}');
+Warning: console.warn('⚠️ [WARN] {context}: {details}');
+
+ROUTE NAMING CONVENTION:
+GET    /{resource}                 - List all
+GET    /{resource}/{id}            - Get one
+POST   /{resource}                 - Create
+PUT    /{resource}/{id}            - Update
+DELETE /{resource}/{id}            - Delete
+POST   /{resource}/{id}/{action}   - Custom action
+
+COMMON TASKS [QUICK REFERENCE]:
+Task: Add new feature endpoint
+  1. Create /server/{feature}-endpoints.tsx
+  2. Export {feature}App (Hono instance)
+  3. Add routes for both servers
+  4. Import in index.tsx
+  5. Mount with app.route() for both servers
+
+Task: Modify existing endpoint
+  1. Verify CURRENT_SERVER_MODE=development
+  2. Edit /server/{feature}-endpoints.tsx
+  3. Test on development endpoint
+  4. Deploy when ready
+
+Task: Add database operation
+  1. Import kv from ./kv_cache.tsx
+  2. Use kv.get(), kv.set(), etc.
+  3. Include retry logic for auth
+  4. Return detailed errors
+
+Task: Add OAuth integration
+  1. Create /server/{service}-oauth-endpoints.tsx
+  2. Export add{Service}OAuthEndpoints(app, prefix)
+  3. Call function twice in index.tsx (both servers)
+  4. Store tokens in KV with user prefix
+
+ENVIRONMENT VARIABLES [AVAILABLE]:
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CURRENT_SERVER_MODE
+OPENAI_API_KEY
+CLAUDE_API_KEY
+STRIPE_SECRET_KEY
+[Plus all others in user-provided secrets list]
+
+ACCESS PATTERN:
+const apiKey = Deno.env.get('OPENAI_API_KEY');
+if (!apiKey) {
+  return c.json({ error: 'API key not configured' }, 500);
+}
+
+VERSION INFO:
+Last Updated: 2026-01-20
+Server Architecture: Three-tier (Frontend -> Server -> Database)
+Production Server: make-server-373d8b09 (o9)
+Development Server: make-server-development
+Database: kv_store_373d8b09 (Postgres with KV wrapper)
+Framework: Hono (Deno)
+Runtime: Deno (Supabase Edge Functions)
+
+===================================================================
+END AI SERVER MODIFICATION PROTOCOL
+===================================================================

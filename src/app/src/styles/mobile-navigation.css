@@ -1,0 +1,402 @@
+/* ========================================
+   CRITICAL: Mobile Navigation Performance & Dynamic Island Fix
+   ======================================== */
+
+/* Hardware acceleration for mobile navigation - CRITICAL for smooth transitions */
+.mobile-nav-bar,
+.mobile-header,
+[data-mobile-nav],
+[class*="mobile-nav"] {
+  /* Force GPU acceleration */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  
+  /* Optimize rendering */
+  will-change: transform, opacity;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fixed header with Dynamic Island clearance - CRITICAL */
+@media (max-width: 767px) {
+  .mobile-header,
+  [data-mobile-header] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    
+    /* REMOVED: Let inline styles in MobileLayout.tsx handle padding */
+    /* padding-top and min-height are now controlled by inline styles */
+    
+    /* Hardware acceleration */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* Performance optimization */
+    will-change: transform;
+  }
+  
+  /* Content spacing - REMOVED !important to allow inline style control */
+  .mobile-content-wrapper {
+    /* padding controlled by inline styles in MobileLayout.tsx */
+  }
+  
+  /* Fixed bottom navigation */
+  .mobile-bottom-nav,
+  [data-mobile-bottom-nav] {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    
+    /* CRITICAL: Extra padding for home indicator */
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+    
+    /* Hardware acceleration */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* Performance optimization */
+    will-change: transform;
+  }
+  
+  /* Smooth transitions for mobile nav items */
+  .mobile-nav-item,
+  [data-mobile-nav-item] {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Hardware acceleration */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+  }
+  
+  .mobile-nav-item:active,
+  [data-mobile-nav-item]:active {
+    transform: translate3d(0, 0, 0) scale(0.95);
+    -webkit-transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  
+  /* Prevent scroll issues on iOS */
+  .mobile-layout body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .mobile-scroll-container {
+    position: fixed;
+    top: max(4.5rem, calc(env(safe-area-inset-top) + 1.75rem));
+    bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    
+    /* Hardware acceleration */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+  }
+}
+
+/* iOS-specific fixes for Dynamic Island */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    /* iPhone 14 Pro and newer with Dynamic Island - REMOVED excessive padding */
+    /* The inline styles in MobileLayout.tsx already handle safe-area-inset-top properly */
+    .mobile-header,
+    [data-mobile-header] {
+      /* Let inline styles handle padding */
+    }
+    
+    .mobile-content-wrapper {
+      /* Let inline styles handle padding */
+    }
+    
+    .mobile-scroll-container {
+      /* Let inline styles handle positioning */
+    }
+    
+    /* Ensure logo and header content sits below Dynamic Island */
+    .mobile-header-logo,
+    .mobile-header-content {
+      margin-top: max(0.5rem, calc(env(safe-area-inset-top) * 0.2));
+    }
+  }
+}
+
+/* CRITICAL: AuthPage and modal headers - works in iOS app, not just mobile browser */
+@media (max-width: 767px) {
+  .mobile-safe-area {
+    /* iPhone with Dynamic Island - use safe area inset */
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem) !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: max(1rem, env(safe-area-inset-left)) !important;
+    padding-right: max(1rem, env(safe-area-inset-right)) !important;
+    
+    /* For devices without notch/island */
+    min-height: calc(env(safe-area-inset-top) + 3rem);
+  }
+  
+  /* iOS-specific enhancement for Dynamic Island */
+  @supports (-webkit-touch-callout: none) {
+    .mobile-safe-area {
+      /* Even tighter spacing on iOS - brings header closer to island */
+      padding-top: calc(env(safe-area-inset-top) + 0.25rem) !important;
+    }
+  }
+}
+
+/* Prevent flash of unstyled content */
+.mobile-layout {
+  opacity: 0;
+  animation: fadeInMobile 0.2s ease-in forwards;
+}
+
+@keyframes fadeInMobile {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Optimize sheet/modal transitions */
+.mobile-sheet,
+[data-mobile-sheet] {
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+  
+  /* Smooth slide-up animation */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent content jumping during navigation */
+.mobile-layout * {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Fix for input zoom on iOS */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Ensure smooth scrolling performance */
+.mobile-scroll-container,
+.mobile-content-safe,
+[data-mobile-scroll] {
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Optimize button presses */
+.mobile-button,
+[data-mobile-button],
+button {
+  /* Remove delay for touch events */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Fix for sticky elements on mobile */
+@media (max-width: 767px) {
+  .sticky-mobile,
+  [data-sticky-mobile] {
+    position: -webkit-sticky;
+    position: sticky;
+    
+    /* Hardware acceleration */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+  }
+}
+
+/* Performance: Reduce paint areas */
+@media (max-width: 767px) {
+  .mobile-layout {
+    /* Remove contain property that breaks fixed positioning */
+    /* contain: layout style paint; */
+  }
+  
+  .mobile-card,
+  .mobile-list-item {
+    contain: layout style;
+  }
+}
+
+/* CRITICAL: Ensure mobile nav stays fixed to viewport */
+@media (max-width: 767px) {
+  .mobile-nav-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    /* Prevent any movement or transformation during scroll */
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    /* Remove any shadows or filters */
+    box-shadow: none !important;
+    filter: none !important;
+    /* Ensure it stays on top and doesn't shift */
+    contain: layout style paint;
+  }
+}
+
+/* Fix for drop shadow performance */
+@media (max-width: 767px) {
+  .mobile-card,
+  .mobile-button,
+  .mobile-sheet {
+    /* Use transform instead of box-shadow for better performance */
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+  
+  .mobile-card:hover,
+  .mobile-button:hover {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  }
+}
+
+/* ========================================
+   CRITICAL: Safe Area Utilities for Sheets/Modals
+   ======================================== */
+@media (max-width: 767px) {
+  /* Top padding for all phones - simple and works everywhere */
+  .pt-safe {
+    padding-top: 3rem !important;
+  }
+  
+  .mt-safe {
+    margin-top: 1.5rem !important;
+  }
+  
+  /* Sheet content safe area - CRITICAL for roadmap map */
+  .mobile-sheet,
+  [data-slot="sheet-content"] {
+    padding-top: 3rem !important;
+  }
+  
+  /* Sheet close button safe positioning */
+  [data-slot="sheet-close"] {
+    top: 3rem !important;
+  }
+}
+
+/* ========================================
+   LANDSCAPE MODE: Dynamic Navigation Scaling
+   ======================================== */
+@media (max-width: 767px) and (orientation: landscape) {
+  /* Scale the entire navigation container to fit screen height */
+  .landscape-nav-container {
+    /* Account for safe area insets */
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+  }
+  
+  .landscape-nav-wrapper {
+    /* Reduce vertical padding in landscape */
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  .landscape-nav-inner {
+    /* Scale container to fill available vertical space */
+    padding-top: clamp(0.5rem, 2vh, 1rem) !important;
+    padding-bottom: clamp(0.5rem, 2vh, 1rem) !important;
+  }
+  
+  .landscape-nav-button {
+    /* Dynamic vertical padding based on viewport height */
+    padding-top: clamp(0.75rem, 3vh, 2rem) !important;
+    padding-bottom: clamp(0.75rem, 3vh, 2rem) !important;
+    /* Reduce horizontal padding */
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    /* Reduce gap between icon elements */
+    gap: clamp(0.125rem, 0.5vh, 0.5rem) !important;
+  }
+  
+  .landscape-nav-icon {
+    /* Scale icons dynamically based on viewport height */
+    width: clamp(1.75rem, 8vh, 4rem) !important;
+    height: clamp(1.75rem, 8vh, 4rem) !important;
+  }
+}
+
+/* For very short landscape screens (phones in landscape) */
+@media (max-width: 767px) and (orientation: landscape) and (max-height: 450px) {
+  .landscape-nav-container {
+    padding-bottom: 0.25rem !important;
+  }
+  
+  .landscape-nav-wrapper {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  
+  .landscape-nav-inner {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .landscape-nav-button {
+    /* Fill almost entire height for very short screens */
+    padding-top: clamp(0.5rem, 4vh, 1.5rem) !important;
+    padding-bottom: clamp(0.5rem, 4vh, 1.5rem) !important;
+  }
+  
+  .landscape-nav-icon {
+    /* Larger icons for short landscape screens to fill height */
+    width: clamp(2rem, 10vh, 3.5rem) !important;
+    height: clamp(2rem, 10vh, 3.5rem) !important;
+  }
+}
+
+/* For taller landscape screens (tablets in landscape) */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .landscape-nav-button {
+    padding-top: clamp(1rem, 4vh, 2.5rem) !important;
+    padding-bottom: clamp(1rem, 4vh, 2.5rem) !important;
+  }
+  
+  .landscape-nav-icon {
+    width: clamp(2rem, 6vh, 3rem) !important;
+    height: clamp(2rem, 6vh, 3rem) !important;
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "appId": "com.cofounderplus.cofounder",
+  "appName": "Cofounder+",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "*"
+    ]
+  },
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "scheme": "cofounderplus",
+    "overrideUserAgent": null,
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "scheme": "cofounderplus"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#fafbfc",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "Keyboard": {
+      "resize": "native",
+      "style": "dark",
+      "resizeOnFullScreen": true
+    }
+  }
+}

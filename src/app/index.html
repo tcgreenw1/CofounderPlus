@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+      
+      <!-- iOS-specific meta tags -->
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="theme-color" content="#000000" />
+      
+      <title>Cofounder+</title>
+      <style>
+        /* CRITICAL iOS FIX: Full-screen edge-to-edge layout */
+        html, body {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          min-height: 100vh !important;
+          max-height: 100vh !important;
+          overflow: hidden !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: var(--background, #FFFFFF);
+          overscroll-behavior: none !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Dark mode background */
+        html.dark, html.dark body {
+          background-color: var(--background, #1a1a1a);
+        }
+        
+        #root {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          min-height: 100vh !important;
+          max-height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: auto;
+          overscroll-behavior: none !important;
+          -webkit-overflow-scrolling: touch;
+          background-color: inherit;
+        }
+        
+        /* Use dynamic viewport height to fill entire screen on iOS */
+        @supports (height: 100dvh) {
+          html, body, #root {
+            height: 100dvh !important;
+            min-height: 100dvh !important;
+            max-height: 100dvh !important;
+          }
+        }
+        
+        /* Prevent any default margins/padding on common elements */
+        * {
+          box-sizing: border-box;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div id="root"></div>
+      <script type="module" src="/src/main.tsx"></script>
+    </body>
+  </html>

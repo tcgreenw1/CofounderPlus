@@ -1,0 +1,421 @@
+COFOUNDER+ SERVER ARCHITECTURE DIAGRAM
+=====================================
+
+                                    ┌─────────────────────────────────────┐
+                                    │      FRONTEND APPLICATION           │
+                                    │   (React + Capacitor + Tailwind)    │
+                                    └───────────────┬─────────────────────┘
+                                                    │
+                                    ┌───────────────▼──────────────────────┐
+                                    │  /utils/supabase/serverConfig.ts     │
+                                    │  • getServerMode()                   │
+                                    │  • getServerEndpoint()               │
+                                    │  • makeApiRequest()                  │
+                                    └───────────────┬──────────────────────┘
+                                                    │
+                        ┌───────────────────────────┼───────────────────────────┐
+                        │                           │                           │
+            ┌───────────▼────────────┐  ┌──────────▼───────────┐  ┌───────────▼────────────┐
+            │   PRODUCTION SERVER    │  │  DEVELOPMENT SERVER  │  │    LEGACY SERVER       │
+            │  make-server-373d8b09  │  │ make-server-dev      │  │  make-server-ac1075a9  │
+            │        (o9)            │  │     (dev)            │  │        (a9)            │
+            │                        │  │                      │  │                        │
+            │  Status: ACTIVE ✅     │  │  Status: ACTIVE ✅   │  │  Status: DEPRECATED ❌ │
+            │  AI Mods: FORBIDDEN ❌ │  │  AI Mods: ALLOWED ✅ │  │  AI Mods: FORBIDDEN ❌ │
+            └────────────┬───────────┘  └──────────┬───────────┘  └────────────────────────┘
+                         │                         │
+                         └────────┬────────────────┘
+                                  │
+                                  │ Both import from shared codebase
+                                  │
+                    ┌─────────────▼──────────────────────────────────────┐
+                    │         /supabase/functions/server/                │
+                    │         SHARED SOURCE CODE (AI TARGET)             │
+                    ├────────────────────────────────────────────────────┤
+                    │ index.tsx                 [Main server app]        │
+                    │ kv_cache.tsx             [DB wrapper - REQUIRED]   │
+                    │ kv_store.tsx             [Low-level - PROTECTED]   │
+                    │ *-endpoints.tsx          [Feature modules]         │
+                    │ *-oauth-endpoints.tsx    [OAuth integrations]      │
+                    │ chat-*.tsx               [AI chat modules]         │
+                    │ ...                      [Additional modules]      │
+                    └─────────────┬──────────────────────────────────────┘
+                                  │
+                                  │ All database operations
+                                  │
+                    ┌─────────────▼──────────────────────────────────────┐
+                    │         SUPABASE DATABASE                          │
+                    │         PostgreSQL + KV Store                      │
+                    ├────────────────────────────────────────────────────┤
+                    │ kv_store_373d8b09        [Key-value table]         │
+                    │ auth.users               [Authentication]          │
+                    │ storage.buckets          [File storage]            │
+                    └────────────────────────────────────────────────────┘
+
+
+DEPLOYMENT WORKFLOW
+===================
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: ENABLE DEVELOPMENT MODE                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  $ supabase secrets set CURRENT_SERVER_MODE=development                    │
+│                                                                            │
+│  Effect: AI can now modify /server/ files                                 │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: AI MAKES CHANGES                                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  Target: /supabase/functions/server/*.tsx                                  │
+│                                                                            │
+│  Changes immediately affect:                                               │
+│    ✅ make-server-development (testing endpoint)                          │
+│    ❌ make-server-373d8b09 (production - unchanged)                       │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: TEST ON DEVELOPMENT SERVER                                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  Endpoint: https://{projectId}.supabase.co/functions/v1/                  │
+│            make-server-development/{route}                                 │
+│                                                                            │
+│  Production remains:                                                       │
+│    ✅ Stable and operational                                              │
+│    ✅ Serving real user traffic                                           │
+│    ✅ Using pre-change code                                               │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: FREEZE DEVELOPMENT                                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  $ supabase secrets set CURRENT_SERVER_MODE=production                     │
+│                                                                            │
+│  Effect: AI can no longer modify server files                             │
+│          Both servers now use same /server/ code                           │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 5: DEPLOY TO PRODUCTION                                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  $ supabase functions deploy make-server-373d8b09                          │
+│                                                                            │
+│  Effect: Production server restarts with new code                          │
+│          (Code already existed in /server/, just needs restart)            │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 6: MONITOR PRODUCTION                                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  $ supabase functions logs make-server-373d8b09 --follow                   │
+│                                                                            │
+│  Watch for:                                                                │
+│    • Error rates                                                           │
+│    • Response times                                                        │
+│    • User reports                                                          │
+│                                                                            │
+│  If issues: Emergency rollback (git revert + redeploy)                     │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+ROUTE REGISTRATION PATTERN
+===========================
+
+When creating a new endpoint module:
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ FILE: /supabase/functions/server/my-feature-endpoints.tsx                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  import { Hono } from 'npm:hono';                                          │
+│  import * as kv from './kv_cache.tsx';  // REQUIRED - not kv_store.tsx    │
+│  import { createClient } from 'jsr:@supabase/supabase-js@2';  // JSR only  │
+│                                                                            │
+│  export const myFeatureApp = new Hono();                                   │
+│                                                                            │
+│  // CRITICAL: Add routes for BOTH servers                                 │
+│                                                                            │
+│  myFeatureApp.post('/make-server-373d8b09/my-feature/action', async (c) => {│
+│    // Implementation                                                       │
+│  });                                                                       │
+│                                                                            │
+│  myFeatureApp.post('/make-server-development/my-feature/action', async (c) => {│
+│    // Same implementation                                                 │
+│  });                                                                       │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│ FILE: /supabase/functions/server/index.tsx                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  import { myFeatureApp } from './my-feature-endpoints.tsx';                │
+│                                                                            │
+│  // CRITICAL: Mount for BOTH servers                                      │
+│  app.route('/make-server-373d8b09', myFeatureApp);                         │
+│  app.route('/make-server-development', myFeatureApp);                      │
+│                                                                            │
+│  // ... before Deno.serve(app.fetch)                                       │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+AI DECISION FLOW
+================
+
+                        ┌─────────────────────────────┐
+                        │  User requests modification  │
+                        └──────────────┬──────────────┘
+                                       │
+                                       ▼
+                     ┌─────────────────────────────────┐
+                     │ Check: CURRENT_SERVER_MODE      │
+                     │ equals "development"?           │
+                     └──────────┬──────────────────────┘
+                                │
+                  ┌─────────────┴──────────────┐
+                  │                            │
+                  ▼ YES                        ▼ NO
+         ┌────────────────┐          ┌────────────────────┐
+         │   PROCEED      │          │   ABORT            │
+         └────────┬───────┘          │   Message: Set     │
+                  │                  │   mode to dev first│
+                  │                  └────────────────────┘
+                  ▼
+         ┌────────────────────────────┐
+         │ Check: Target file in      │
+         │ /server/*.tsx ?            │
+         └────────┬───────────────────┘
+                  │
+         ┌────────┴──────────┐
+         │                   │
+         ▼ YES               ▼ NO
+    ┌─────────┐        ┌──────────┐
+    │PROCEED  │        │  ABORT   │
+    └────┬────┘        └──────────┘
+         │
+         ▼
+    ┌────────────────────────────┐
+    │ Check: File is protected?  │
+    │ (kv_store.tsx, info.tsx)   │
+    └────────┬───────────────────┘
+             │
+    ┌────────┴──────────┐
+    │                   │
+    ▼ NO                ▼ YES
+┌─────────┐        ┌──────────┐
+│PROCEED  │        │  ABORT   │
+└────┬────┘        └──────────┘
+     │
+     ▼
+┌────────────────────────────┐
+│ Check: Adds new routes?    │
+└────────┬───────────────────┘
+         │
+    ┌────┴──────────┐
+    │               │
+    ▼ YES           ▼ NO
+┌────────────┐   ┌──────────┐
+│Check: Both │   │ PROCEED  │
+│servers?    │   └────┬─────┘
+└────┬───────┘        │
+     │                │
+┌────┴─────┐          │
+│          │          │
+▼ YES      ▼ NO       │
+┌──────┐ ┌──────┐     │
+│PROCEED│ABORT │     │
+└──┬───┘ └──────┘     │
+   │                  │
+   └──────────┬───────┘
+              │
+              ▼
+    ┌─────────────────────┐
+    │  EXECUTE            │
+    │  MODIFICATION       │
+    └──────────┬──────────┘
+               │
+               ▼
+    ┌─────────────────────┐
+    │  Test on dev server │
+    └─────────────────────┘
+
+
+DATA FLOW DIAGRAM
+=================
+
+Frontend Request
+       │
+       ├─→ Check serverConfig.getServerMode()
+       │   ├─→ "production" → https://.../make-server-373d8b09/{route}
+       │   └─→ "development" → https://.../make-server-development/{route}
+       │
+       ▼
+Server Entry Point
+       │
+       ├─→ /make-server-373d8b09/index.ts ──┐
+       │   OR                                │
+       ├─→ /make-server-development/index.ts ┤
+       │                                     │
+       └─→ Both import from ──────────────────┘
+                │
+                ▼
+         /server/index.tsx
+                │
+                ├─→ CORS middleware
+                ├─→ Cache prewarming
+                ├─→ Request logging
+                ├─→ Route matching
+                │
+                ▼
+         Feature Endpoint Module
+         (*-endpoints.tsx)
+                │
+                ├─→ Authentication (retryAuthRequest)
+                ├─→ Authorization check
+                ├─→ Business logic
+                │
+                ▼
+         Database Access
+         (via kv_cache.tsx)
+                │
+                ├─→ Cache check
+                ├─→ KV store query
+                ├─→ Result transformation
+                │
+                ▼
+         Response to Frontend
+                │
+                ├─→ Success: { data, ... }
+                └─→ Error: { error, timestamp, ... }
+
+
+FILE DEPENDENCY MAP
+===================
+
+/App.tsx
+  ├─→ /utils/supabase/serverConfig.ts
+  │     ├─→ /utils/supabase/info.tsx [PROTECTED]
+  │     └─→ Uses: getServerEndpoint(), makeApiRequest()
+  │
+  └─→ Makes requests to:
+        ├─→ make-server-373d8b09 (production)
+        └─→ make-server-development (development)
+
+/supabase/functions/make-server-373d8b09/index.ts
+  └─→ import app from '../server/index.tsx'
+
+/supabase/functions/make-server-development/index.ts
+  └─→ import app from '../server/index.tsx'
+
+/supabase/functions/server/index.tsx
+  ├─→ kv_cache.tsx [REQUIRED for all DB ops]
+  ├─→ notes-endpoints.tsx
+  ├─→ roadmap-endpoints.tsx
+  ├─→ finance-endpoints.tsx
+  ├─→ team-endpoints.tsx
+  ├─→ [...50+ other endpoint modules]
+  └─→ Each module imports:
+        ├─→ npm:hono
+        ├─→ ./kv_cache.tsx [REQUIRED]
+        └─→ jsr:@supabase/supabase-js@2 [REQUIRED]
+
+/supabase/functions/server/kv_cache.tsx
+  ├─→ ./kv_store.tsx [PROTECTED - low level access]
+  └─→ Provides: get, set, del, mget, mset, mdel, getByPrefix
+               prewarmUserCache, isCacheWarmed
+
+/supabase/functions/server/kv_store.tsx [PROTECTED - NEVER MODIFY]
+  └─→ Direct PostgreSQL access
+
+
+CSS ARCHITECTURE
+================
+
+/styles/globals.css
+  ├─→ Defines design system variables:
+  │     ├─→ Colors: --color-primary, --color-secondary, etc.
+  │     ├─→ Spacing: --spacing-xs, --spacing-sm, --spacing-md, etc.
+  │     ├─→ Typography: font-sans, font-mono, font-display
+  │     ├─→ Borders: --border-width, --border-radius
+  │     └─→ Shadows: --shadow-sm, --shadow-md, --shadow-lg
+  │
+  └─→ All UI components MUST use these variables
+
+Example Component:
+  <div className="
+    bg-[var(--color-primary)]          ✅ CORRECT
+    text-[var(--color-text-primary)]   ✅ CORRECT
+    p-[var(--spacing-md)]              ✅ CORRECT
+    rounded-[var(--border-radius)]     ✅ CORRECT
+  ">
+    Content
+  </div>
+
+  <div className="
+    bg-blue-500                        ❌ WRONG - Hardcoded
+    text-white                         ❌ WRONG - Hardcoded
+    p-4                                ❌ WRONG - Hardcoded
+    rounded-lg                         ❌ WRONG - Hardcoded
+  ">
+    Content
+  </div>
+
+
+MONITORING POINTS
+=================
+
+┌────────────────────────────────────────────────────────────────┐
+│ Health Endpoints                                                │
+├────────────────────────────────────────────────────────────────┤
+│ Production:                                                     │
+│   GET /make-server-373d8b09/health                             │
+│   Response: { status, timestamp, environment: "production" }   │
+│                                                                │
+│ Development:                                                    │
+│   GET /make-server-development/health                          │
+│   Response: { status, timestamp, environment: "development" }  │
+└────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────┐
+│ Logging                                                         │
+├────────────────────────────────────────────────────────────────┤
+│ Production Logs:                                                │
+│   $ supabase functions logs make-server-373d8b09 --follow      │
+│                                                                │
+│ Development Logs:                                               │
+│   $ supabase functions logs make-server-development --follow   │
+└────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────┐
+│ Database Monitoring                                             │
+├────────────────────────────────────────────────────────────────┤
+│ Supabase Dashboard > Table Editor > kv_store_373d8b09          │
+│                                                                │
+│ Query examples:                                                 │
+│   SELECT COUNT(*) FROM kv_store_373d8b09;                      │
+│   SELECT * FROM kv_store_373d8b09 WHERE key LIKE 'business:%'; │
+└────────────────────────────────────────────────────────────────┘
+
+
+Last Updated: 2026-01-20
+Document Version: 1.0.0
+ASCII Art Optimized for Terminal Display
